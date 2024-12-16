@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Holiday MadGlib</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/babel-standalone@6/babel.min.js"></script>
+    <style>
+    @media screen {
+      body {
+        background-color: #8f3131 ; /* Light parchment background */      
+      }
+
+      #app {
+        padding-top:100px;
+        padding-bottom:100px;
+      }
+
+      #parchment {
+        background: linear-gradient(135deg, #f7e9c8, #e6d4aa);
+        border: 10px solid #d4b88b;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        /* color: #4b3e2b; */
+      }  
+      
+      input {
+        background-color: #f5ebc3;
+      }
+    }
+    
+    #parchment .first-line, #dummy-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom:20px;
+    }
+
+    #parchment .first-line input, #dummy-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 24px;
+      font-weight: bold;
+      height: auto;
+      width: auto;
+    }
+
+    .backlink {
+      cursor: pointer;
+    }
+
+    #parchment {
+        padding: 30px;
+        max-width: 800px;
+        width: 90%;
+        border-radius: 15px;
+    }   
+
+    body, #dummy, input {
+      font-family: 'Merriweather', serif;
+      font-size: 14px;
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      padding: 0;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .line:nth-child(even) {
+      background-color: #f2e2bf;
+    }
+
+    input {
+      display: inline;
+      height: 14px;
+      padding: 2px;
+      width: auto;
+      border-radius: 4px;
+    }
+
+    #dummy, #dummy-title {
+      visibility:hidden; 
+      position:absolute;
+      top:-9999px; 
+      left:-9999px;
+      width: auto;
+      padding: 0;
+      height: auto;
+      border: 1px solid green;
+    }
+
+    #app {
+      max-width: 800px;
+      height: 100%;
+    }
+
+    #controls {
+      display: block;
+      text-align: center;
+    }
+
+    #break {
+      height:20px;
+    }
+
+    span,p {
+      line-height: 30px;
+      padding: 10px;
+      margin: 0 0 15px;
+      border-radius:5px;
+    }
+
+    button {
+      margin: 10px 5px;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+
+    .blink {
+      animation: blink-animation 0.5s step-start 3;
+    }
+
+    .short-blink {
+      animation: blink-animation 0.5s step-start 1;
+    }
+
+    .button-container {
+      display: inline-flex; /* Align main button and arrow buttons side by side */
+      align-items: center; /* Vertically align buttons */
+    }
+
+    .arrow-buttons {
+      display: flex;
+      flex-direction: column; /* Stack up and down buttons vertically */
+      align-items: center; /* Center align the buttons horizontally */
+    }
+
+    .arrow-button {
+      padding: 0px;
+      font-size: 12px;
+      line-height: 1;
+      width: 16px; /* Ensure consistent width for both buttons */
+      height: 16px; /* Set smaller size for arrow buttons */
+      margin: 3px 0px 3px 0px; /* Add a bit of spacing between the arrows */
+    }
+
+    .subset-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      overflow-y: auto; /* Only vertical scrolling */
+      display: flex;
+      flex-wrap: wrap; /* Wrap inputs into rows */
+      gap: 10px; /* Add spacing between inputs */
+      padding: 20px;
+      justify-content: flex-start; /* Align items to the left */
+      align-content: flex-start; /* Keep inputs at the top */
+      z-index: 1000; /* Ensure it's above all other content */
+      padding-left:50px;
+    }
+
+    .subset-overlay input {
+      width: 100%; /* Input takes full column width */
+      box-sizing: border-box; /* Account for padding and borders */
+      padding: 10px 4px 10px 4px;
+    }
+
+    .subset {
+      margin-bottom: 5px;
+    }
+
+
+    @keyframes blink-animation {
+      50% { background-color: yellow; }
+      100% { background-color: inherit; }
+    }    
+
+    @media print {
+      #controls {
+        display:none;
+      }
+      .line:nth-child(even) {
+      background-color: #EEEEEE;
+    }
+    }
+
+  </style>
+</head> 
+
+<body>  
+  <div id="app"></div>
+  <span id="dummy-title" class="dummy">Dummy-Title</span>
+  <span id="dummy" class="dummy">Dummy</span>  
+
+  <script type="text/babel">
+    //
+    // TODO:
+    //  Go over all content, try to have it make more sense
+    //  Add feature to randomly swap this word with other words in its exact category?
+    //  Add ability to just show inputs
+    //  Add ability to break inputs into N groups, and just show group #N at the moment
+    //  If adding that ability, make sure it doesn't break TAB feature
+    //  Put alert on Clear
+    //  If token reference is all upper case or init case, process token value to match
+    //
+
+    function MainApp() {
+      const functions = {
+        article: (before, after, vowel = "an", consonant = "a") => {
+          let afterText = after || "";
+          if(after.hasOwnProperty("id")) {
+            let elem = document.getElementById("input-" + after.id);
+            if(elem && elem.hasOwnProperty("value")) 
+              afterText = elem.value;
+            else {
+              afterText = inputs.data[after.id] || `#${after.id}`;
+              if(!afterText) 
+                debugger;
+            }
+          }
+          else afterText = "";
+          return afterText.trim().match(/^[aeiou]/i) ? vowel : consonant
+        },
+        Article: (before, after) => functions.article(before, after, "An", "A"),
+      };
+
+      const handleChange = (e, index, token, inputs, setInputs) => {
+        console.log(`Updating input ${index} to ${e.target.value}`);
+        const updatedData = [...inputs.data];
+        updatedData[index] = e.target.value;
+        setInputs({ ...inputs, data: updatedData });
+
+        const width = measureTextWidthFromInput(
+          document.getElementById(index == 1 ? "dummy-title" : "dummy"),
+          e.target.value || token.value
+        );
+        e.target.style.width = `${width}px`;
+      }
+
+      const handleClear = () => {
+        setInputs(defaultInputs);
+        localStorage.removeItem("inputs");
+      };
+
+      const handlePrint = () => {
+        window.print();
+      };
+
+      const handleFocus = (token) => {
+        // Regex to find $references
+        const referencePattern = /\$(\w+)/g;
+
+        // Parse token.value to find the $reference
+        const matches = [...token.value.matchAll(referencePattern)];
+
+        matches.forEach((match) => {
+          const refName = match[1].toLowerCase(); // Get the reference name
+          const referencedIndex = refs[refName]; // Look up the index from refs
+          console.log(`Reference name: ${refName}, Referenced index: ${referencedIndex}`);
+
+          // Blink the referenced input
+          const element = document.getElementById(`input-${referencedIndex}`);
+          if (element) {
+            element.classList.add("blink");
+            setTimeout(() => element.classList.remove("blink"), 1500); // Blink for 1.5 seconds
+          }
+        });
+      };
+
+      const handleSplitChange = (newSplitValue) => {
+        if(newSplitValue > 1) {
+          setInputs((prevInputs) => ({
+            ...prevInputs,
+            splitButton: newSplitValue,
+          }));
+          updateAssignments();
+        }
+      };
+
+      const focusOn = (tokenId) => {
+        const element = document.getElementById(`input-${tokenId}`);
+        if (element) {
+          element.focus();
+          element.classList.add("blink");
+          setTimeout(() => element.classList.remove("blink"), 1500); // Blink for 1.5 seconds
+        }        
+      };
+
+      const getPlaceholder = (inputs, token) => {
+        // Use regex to find references like $something
+        const referencePattern = /\$(\w+)/g;
+
+        // Replace all matches in token.value
+        const replacedValue = token.value.replace(referencePattern, (match, refName) => {
+          const refIndex = refs[refName.toLowerCase()];
+          const referencedValue = inputs.data[refIndex];
+          return referencedValue || `#${refIndex}`; // Replace with value or ID
+        });
+
+        return replacedValue;
+      };
+
+
+      const getData = () => {
+        return `A Visit from [Nick:Celebrity, male]
+          'Twas the night before [Christmas:holiday], when all through the [house:building]
+          Not $@article [creature:noun, living thing] was [moving verb, -ing], not even a [example of $creature, rhymes with $house];
+          The [stockings:clothing, plural] were [moving verb, past-tense] by the [chimney:noun, something you can crawl through] with care,
+          In hopes that $Nick [adverb] would be there;
+          The [group of people] were nestled all [good adjective] in their [beds:furniture, plural];
+          While visions of [esoteric food] [intransitive verb related to $heads, past-tense] in their [heads:noun, plural, rhymes with $beds];
+          And [person, female] in her $stockings, and I in my [cap:article of clothing],
+          Had just settled our heads for $@article [adjective, describing $nap] winter's [nap:noun, rhymes with $cap],
+          When out on the [landscape feature] there arose such a [clatter:noise],
+          I [verb, past tense] from my [furniture] to see what was the [rhymes with $clatter].
+          Away to the [part of $house] I [movement verb] like a [flash:noun, something that moves fast or slow],
+          Tore open the [noun, something that closes] and threw up the [noun, rhymes with $flash].
+          The [noun, something outside] on the breast of the [adjective]-fallen snow,
+          Gave a lustre of [noun] to [type of object, plural] below,
+          When what to my [adjective] eyes did [appear:verb, to observe],
+          But $@article [adjective] [sleigh:vehicle] and [number] [adjective] rein-[noun, rhymes with $appear],
+          With $@article [adjective, size] [adjective, shape] driver so [adjective] and [adjective],
+          I knew in $@article [noun, short timespan] he must be $Nick.
+          More [rapid:adjective] than [noun, something $rapid] his [coursers:plural creatures] they came,
+          And he [movement verb, -ing], and [movement verb, -ing], and called them by name:
+          "Now, [Pet_name]! now, [Pet_name]! now [Pet_name] and [vixen:Pet_name]!
+          On, [Pet_name]! on, [Pet_name]! on, [Pet_name] and [Pet_name, rhymes with $vixen]!
+          To the [noun, part of $part] of the [part:some part of the $house]! to the [noun, part of wall] of the wall!
+          Now [dash:verb] away! $Dash away! $Dash away all!"
+          As [noun, from a $hurricane] that before the [adjective] [hurricane:dangerous noun] fly,
+          When they [verb] with $@article [noun], mount to the sky;
+          So up to the $house-top the $coursers they flew
+          With the $sleigh full of [toys:noun, plural, entertainment], and $Nick too—
+          And then, in a [verb, -ing], I heard on the roof
+          The [verb, -ing] and [verb, -ing] of each [adjective] hoof.
+          As I [verb, past-tense] my [noun, body part], and was [verb, -ing] around,
+          Down the $chimney $Nick came with a bound.
+          He was dressed all in [noun, something worn], from his [noun, body part] to his [foot:noun, body part],
+          And his [noun, article of clothing, plural] were all [adjective] with ashes and [noun, a substance, rhymes with $foot];
+          A [noun, collective noun] of $toys, he had [verb, past-tense] on his back,
+          And he [verb, past-tense] like a [noun, something awful] just [verb, -ing] his pack.
+          His eyes—how they [verb, past-tense]! his [noun, body part], how merry!
+          His [noun, body part, plural] were like [noun, plural], his [noun, body part(s)] like a cherry!
+          His [adjective, size] [adjective, shape] [noun, body part] was drawn up like a bow,
+          And the [noun, body growth] on his [noun, body part] was as [adjective, color] as the snow;
+          The stump of a [pipe:noun, something that sucks or blows] he held [adjective] in his teeth,
+          And the [noun, created by $pipe], it encircled his [noun, body-part] like a wreath;
+          He had a [adjective] face and a [adjective, size] [adjective, shape] belly
+          That [verb, past-tense] when he [verb, past-tense], like a bowl full of [noun, rhymes with belly].
+          He was [adjective] and [adjective], a right [adjective] [adjective] [noun, a role or job or identity, rhymes with myself],
+          And I [verb, past-tense] when I [verb, past-tense] him, in spite of myself;
+          A wink of his [noun, body-part] and a twist of his [head:noun]
+          Soon gave me to know I had nothing to [verb, rhymes with $head];
+          He spoke not $@article [noun, something spoken], but went [adverb] to his work,
+          And filled all the $stockings; then [verb, past-tense] with a jerk,
+          And [verb, -ing] his [noun, body part] aside of his nose,
+          And giving $@article [noun, gesture], up the $chimney he rose;
+          He [movement verb, past-tense] to his $sleigh, to his [noun, group] gave a whistle,
+          And away they all [verb, past-tense] like the [noun, some part of $@article $thistle] of a [adjective, curse] [thistle:noun, something made of parts].
+          But I heard him [verb, to make a noise], ere he [movement verb, past tense] out of sight—
+          “Happy $Christmas to [all:noun, a group of people], and to $all a good night!”`;
+      }
+      
+      const parseLine = (line, references = {}) => {
+        const tokenPattern = /(\[[^\]]+\])/g;
+        const tokens = [];
+
+        line.split(tokenPattern).forEach(section => {
+          section = section.trim();
+
+          // This is a token
+          if (section.startsWith("[")) {
+            section = section.replace(/\[|\]/g, "").trim()
+            var name = null;
+            var matches = section.match(/([^:]+):(.*)/);
+
+            if (matches != null) {
+              section = matches[2];
+              name = matches[1];
+            }
+
+            tokens.push({
+              type: "token",
+              value: section,
+              name: name,
+            });
+          }
+
+          // This is a string
+          else {
+            section.trim().split(/(\$@?[A-Za-z]+)/g).forEach(element => {
+              element = element.trim();
+              // String element is variable insertion
+              if (element.startsWith("$")) {
+                var ref = element.substr(1).trim();
+                if(ref.startsWith("@")) {
+                  tokens.push({
+                    type: "function",
+                    value: ref.substr(1).trim(),
+                  });
+                } else {
+                  tokens.push({
+                    type: "reference",
+                    value: element.substr(1).trim(),
+                  });
+                }
+              }
+
+              // String element is just text
+              else if (element.length > 0) {
+                tokens.push({
+                  type: "string",
+                  value: element,
+                });
+              }
+            });
+          }
+        });
+
+        return tokens;
+      }
+
+      const buildGroups = (placeholders, refs) => {
+        const groups = [];
+        const visited = new Set();
+
+        const findGroup = (index) => {
+          const group = [];
+          const stack = [index];
+
+          while (stack.length) {
+            const current = stack.pop();
+            if (!visited.has(current)) {
+              visited.add(current);
+              group.push(current);
+
+              // Check if this input references another or is referenced
+              const placeholder = placeholders[current] || "";
+              const match = placeholder.match(/\$([a-zA-Z0-9_]+)/);
+              if (match) {
+                const refIndex = refs[match[1]];
+                if (refIndex !== undefined) stack.push(refIndex);
+              }
+
+              // Check if other inputs reference this one
+              for (const [key, value] of Object.entries(refs)) {
+                if (value === current) {
+                  const refIndex = placeholders.findIndex((p) =>
+                    p && p.includes(`$${key}`)
+                  );
+                  if (refIndex !== -1) stack.push(refIndex);
+                }
+              }
+            }
+          }
+
+          return group;
+        };
+
+        for (let i = 0; i < placeholders.length; i++) {
+          if (!visited.has(i)) {
+            groups.push(findGroup(i));
+          }
+        }
+
+        return groups;
+      };
+
+      const distributeToPlayers = (groups, totalPlayers) => {
+        const assignments = Array.from({ length: totalPlayers }, () => []);
+
+        groups.forEach((group, index) => {
+          const playerIndex = index % totalPlayers;
+          assignments[playerIndex].push(...group);
+        });
+
+        return assignments;
+      };
+
+      const measureTextWidthFromInput = (dummyElement, text) => {
+        dummyElement.innerText = text;
+        let rect = dummyElement.getBoundingClientRect();
+        return rect.width;// * .753;
+      };
+
+      const updateAssignments = () => {
+        const groups = buildGroups(placeholders, refs);
+        assignments = distributeToPlayers(groups, inputs.splitButton)
+        assignments.forEach((playerInputs) => {
+          playerInputs.sort((a, b) => {
+            const placeholderA = placeholders[a] || "";
+            const placeholderB = placeholders[b] || "";
+            return placeholderA.localeCompare(placeholderB);
+          });
+        });
+      };
+
+      var defaultInputs = { data: [], splitButton: 6 };
+      var tokens = [];
+      var refs = [];
+      var tokenId = 0;
+      var currentLine = []; // Holds tokens for the current line
+      var allDivs = [];
+      var placeholders = [];
+      var assignments = [];
+
+      // Parse into token list
+      var data = getData();
+      var lines = data.split(/\r?\n\s*/);
+      lines.forEach((line, index) => {
+        var parts = parseLine(line);
+        parts.forEach(element => {
+          switch (element.type) {
+            case "token":
+              defaultInputs.data.push("");
+              if(element.name) {
+                refs[element.name.toLowerCase()] = tokens.length;
+              }
+              placeholders[tokens.length] = element.value;
+          }
+          element.id = tokens.length;
+          tokens.push(element);
+        });
+        tokens.push({ type: "string", value: "<br>" });
+      });
+
+      // Restore saved inputs from localStorage or use defaults
+      const savedInputs = JSON.parse(localStorage.getItem("inputs")) || defaultInputs;
+      const [inputs, setInputs] = React.useState(savedInputs);
+      const [viewMode, setViewMode] = React.useState("main"); // Default view mode
+
+      React.useEffect(() => {
+        if (inputs.data.length < tokenId) {
+          const paddedData = Array.from({ length: tokenId }, (_, i) => inputs.data[i] || "");
+          setInputs({ ...inputs, data: paddedData });
+        }
+      }, [inputs, tokenId]);
+
+      React.useEffect(() => {
+        localStorage.setItem("inputs", JSON.stringify(inputs));
+      }, [inputs]);   
+      
+      React.useEffect(() => {
+        const handleTab = (e) => {
+          if (e.key === "Tab") {
+            e.preventDefault(); // Prevent default tab behavior
+
+            // Get all input elements
+            const inputs = document.querySelectorAll("input");
+
+            // Filter empty inputs
+            const emptyInputs = Array.from(inputs).filter((input) => input.value === "");
+
+            if (emptyInputs.length > 0) {
+              // Pick a random empty input
+              const randomInput = emptyInputs[Math.floor(Math.random() * emptyInputs.length)];
+
+              // Focus the random empty input
+              randomInput.focus();
+
+              // Blink
+              randomInput.classList.add("short-blink");
+              setTimeout(() => randomInput.classList.remove("short-blink"), 1500); // Blink for 1.5 seconds
+            }
+          }
+        };
+
+        // Attach keydown event listener
+        window.addEventListener("keydown", handleTab);
+
+        // Cleanup event listener on unmount
+        return () => {
+          window.removeEventListener("keydown", handleTab);
+        };
+      }, []);
+      
+      tokens.forEach((token, index) => {
+        const isPunctuation = token.type === "punctuation" || [",", ":", ".", "!", "?"].includes(token.value);
+        const needsSpace = currentLine.length > 0 && !isPunctuation;
+
+        // Build the content for the current token
+        const tokenElement = (
+          <React.Fragment key={`token-${index}`}>
+            {needsSpace && " "}
+            {(() => {
+              switch (token.type) {
+                case "string":
+                  if (token.value.includes("<"))
+                    return <span dangerouslySetInnerHTML={{ __html: token.value }} />;
+                  else return token.value;
+                case "reference":
+                  const refIndex = refs[token.value.toLowerCase()];
+                  const refValue = inputs.data[refIndex] || `#${refIndex}`;
+                  return (
+                    <i
+                      className="backlink"
+                      onClick={() => focusOn(refIndex)}
+                    >
+                      {refValue}
+                    </i>
+                  );
+                case "function":
+                  const before = tokens[index - 1] || { value: "" };
+                  const after = tokens[index + 1] || { value: "" };
+                  const func = functions[token.value];
+                  return func ? func(before, after) : `[Unknown function: ${token.name}]`;
+                case "token":
+                  let placeholder = getPlaceholder(inputs, token);
+                  placeholder = placeholder.replaceAll(/(.*)\$@(\w+)(.*)/g, (match, before, funcName, after) => {
+                    let func = functions[funcName] || null;
+                    return before + 
+                      (func ? func(before, after) : `[Unknown function: ${func}]`)
+                      + after;
+                  });
+                  placeholders[token.id] = placeholder;
+                  const width = measureTextWidthFromInput(
+                    document.getElementById(index == 1 ? "dummy-title" : "dummy"), 
+                    inputs.data[index] || placeholder
+                  );
+                  return (
+                    <input
+                      key={`input-${index}`}
+                      id={`input-${index}`}
+                      placeholder={placeholder}
+                      value={inputs.data[index] || ""}
+                      style={{ width: `${width}px` }}
+                      onChange={(e) => handleChange(e, index, token, inputs, setInputs)}
+                      onFocus={() => handleFocus(token)}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })()}
+          </React.Fragment>
+        );
+
+        // Add token to the current line content
+        currentLine.push(tokenElement);
+
+        // If a line terminator is found, finalize the current <div>
+        if (token.type === "string" && token.value === "<br>") {
+          let className = "line";
+          if(allDivs.length === 0) className += " first-line";
+          
+          allDivs.push(
+            <div key={`line-${allDivs.length}`} className={className}>
+              {currentLine}
+            </div>
+          );
+          currentLine = []; // Start a new line
+        }
+      });
+
+      // Push the last group if there's any leftover content
+      if (currentLine.length > 0) {
+        allDivs.push(
+          <div key={`line-${allDivs.length}`} className={allDivs.length === 0 ? "first-line" : ""}>
+            {currentLine}
+          </div>
+        );
+      }
+
+      updateAssignments();
+
+      // console.log(inputs);
+      // console.log(placeholders);
+      // console.log(refs);
+      // console.log(defaultInputs);
+      // console.log(tokens);
+      // console.log(functions);
+      console.log(assignments);
+
+      return (
+        <div>
+          <div id="break"></div>
+          <div id="controls">
+            <button onClick={handleClear}>Clear</button>
+            <button onClick={handlePrint}>Print</button>
+            {viewMode === "main" && (            
+              <div className="button-container">
+                <button onClick={() => setViewMode("subset")}>
+                  Split Into {inputs.splitButton} Inputs
+                </button>
+                <div className="arrow-buttons">
+                  <button onClick={() => handleSplitChange(inputs.splitButton + 1)} className="arrow-button up-arrow">▲</button>
+                  <button onClick={() => handleSplitChange(inputs.splitButton - 1)} className="arrow-button down-arrow">▼</button>
+                </div>
+              </div>
+            )}
+            {viewMode === "subset" && (
+              <button onClick={() => setViewMode("main")}>
+                Back to Full View
+              </button>
+            )}
+          </div>  
+          <div id="break"></div>
+          <div id="parchment">
+            {allDivs}
+          </div>
+
+          {viewMode === "subset" && (
+            <SubsetView
+              inputs={inputs}
+              placeholders={placeholders}
+              playerNumber={1}
+              handleChange={handleChange} 
+              setViewMode={setViewMode}
+              assignments={assignments}
+            />
+          )}
+
+          <div id="break"></div>
+        </div>
+      );
+    }
+
+    function SubsetView({ inputs, placeholders, playerNumber, handleChange, setViewMode, assignments }) {
+      console.log("inputs:", inputs);
+      console.log("assignments:", assignments);
+      console.log("playerNumber:", playerNumber);
+
+      const data = assignments[playerNumber - 1];
+      console.log("data:", data);
+      const totalPlayers = inputs.splitButton;
+
+      return (
+        <div className="subset-overlay">
+          <h2>Player {playerNumber}'s Inputs</h2>
+
+          {data.map((index) => {
+            const value = inputs[index] || '';
+            const placeholder = placeholders[index] || `#${index}`;
+            return (
+            <div key={index} className="subset">
+              <input
+                value={value || ""}
+                placeholder={placeholder}
+                style={{ width: `100%` }}
+                onChange={(e) => handleChange(index, e.target.value)}
+              />
+            </div>
+          )})}
+                
+          <button onClick={() => setViewMode("main")}>Back</button>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("app")).render(<MainApp />);
+  </script> 
+</body>
+</html>
