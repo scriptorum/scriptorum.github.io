@@ -208,7 +208,6 @@
     //  Add ability to just show inputs
     //  Add ability to break inputs into N groups, and just show group #N at the moment
     //  If adding that ability, make sure it doesn't break TAB feature
-    //  Put alert on Clear
     //  If token reference is all upper case or init case, process token value to match
     //
 
@@ -246,8 +245,10 @@
       }
 
       const handleClear = () => {
-        setInputs(defaultInputs);
-        localStorage.removeItem("inputs");
+        if(confirm("CLEAR ENTIRE FORM? This cannot be undone!")) {
+          setInputs(defaultInputs);
+          localStorage.removeItem("inputs");
+        }
       };
 
       const handlePrint = () => {
@@ -316,7 +317,7 @@
           The [stockings:clothing, plural] were [moving verb, past-tense] by the [chimney:noun, something you can crawl through] with care,
           In hopes that $Nick [adverb] would be there;
           The [group of people] were nestled all [good adjective] in their [beds:furniture, plural];
-          While visions of [esoteric food] [intransitive verb related to $heads, past-tense] in their [heads:noun, plural, rhymes with $beds];
+          While visions of [esoteric food] danced in their [heads:noun, plural, rhymes with $beds];
           And [person, female] in her $stockings, and I in my [cap:article of clothing],
           Had just settled our heads for $@article [adjective, describing $nap] winter's [nap:noun, rhymes with $cap],
           When out on the [landscape feature] there arose such a [clatter:noise],
@@ -739,8 +740,7 @@
           {data.map((index) => {
             const value = inputs[index] || '';
             const placeholder = placeholders[index] || `#${index}`;
-            return (
-            <div key={index} className="subset">
+            return (<div key={index} className="subset">
               <input
                 value={value || ""}
                 placeholder={placeholder}
